@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum AquariumType {
+  FRESHWATER
+  MARINE
+  BRACKISH
+  PLANTED
+  BLACKWATER
+}
+
+enum EquipmentType {
+  FILTER_HANG_ON
+  FILTER_CANISTER
+  FILTER_INTERNAL
+  FILTER_SPONGE
+  SUMP
+  HEATER
+  LIGHTING
+  CO2
+  UV_FILTER
+  AIR_PUMP
+  OTHER
+}
+
+enum ReminderType {
+  WATER_CHANGE
+  FILTER_CLEANING
+  MEDIA_REPLACEMENT
+  FEEDING
+  FERTILIZATION
+  SENSOR_CALIBRATION
+  OTHER
+}
+
+enum ReminderStatus {
+  PENDING
+  DONE
+  CANCELED
+}
+
+enum MeasurementType {
+  TEMPERATURE
+  PH
+  WATER_LEVEL
+  AMMONIA
+  NITRITE
+  NITRATE
+  GH
+  KH
+  TDS
+  CONDUCTIVITY
+}
+
+enum MeasurementSource {
+  MANUAL
+  IOT
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  aquariums Aquarium[]
+}
+
+model Aquarium {
+  id          Int          @id @default(autoincrement())
+  name        String
+  type        AquariumType
+
+  widthCm     Float
+  heightCm    Float
+  depthCm     Float
+  volumeLiters Float
+
+  description String?
+  imageUrl    String?
+  setupDate   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  equipment      Equipment[]
+  reminders      MaintenanceReminder[]
+  iotDevices     IoTDevice[]
+  measurements Measurement[]
+
+  @@index([userId])
+}
+
+model Equipment {
+  id          Int           @id @default(autoincrement())
+  name        String
+  type        EquipmentType
+  brand       String?
+  model       String?
+
+  biologicalCapacityLiters Float?
+  maintenanceIntervalDays  Int?
+
+  installedAt        DateTime?
+  lastMaintenanceAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  aquariumId Int
+  aquarium   Aquarium @relation(fields: [aquariumId], references: [id])
+
+  reminders MaintenanceReminder[]
+
+  @@index([aquariumId])
+}
+
+model MaintenanceReminder {
+  id          Int            @id @default(autoincrement())
+  title       String
+  description String?
+
+  type   ReminderType
+  status ReminderStatus @default(PENDING)
+
+  dueDate     DateTime
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  aquariumId Int
+  aquarium   Aquarium @relation(fields: [aquariumId], references: [id])
+
+  equipmentId Int?
+  equipment   Equipment? @relation(fields: [equipmentId], references: [id])
+
+  @@index([aquariumId])
+  @@index([equipmentId])
+}
+
+model IoTDevice {
+  id         Int     @id @default(autoincrement())
+  name       String
+  deviceCode String  @unique
+  active     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  aquariumId Int
+  aquarium   Aquarium @relation(fields: [aquariumId], references: [id])
+
+  measurements Measurement[]
+
+  @@index([aquariumId])
+}
+
+model Measurement {
+  id         Int               @id @default(autoincrement())
+  type       MeasurementType
+  source     MeasurementSource @default(MANUAL)
+  value      Float
+  unit       String
+  measuredAt DateTime          @default(now())
+  note       String?
+
+  aquariumId Int
+  aquarium   Aquarium @relation(fields: [aquariumId], references: [id])
+
+  deviceId Int?
+  device   IoTDevice? @relation(fields: [deviceId], references: [id])
+
+  @@index([aquariumId])
+  @@index([deviceId])
+  @@index([type])
+  @@index([measuredAt])
+}

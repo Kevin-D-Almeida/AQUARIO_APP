@@ -1,0 +1,17 @@
+# Local Git metadata preserved while consolidating this monorepo
+**/.git-local-backup/
+
+# Environment variables and secrets
+**/.env
+**/.env.*
+!**/.env.example
+
+# Dependencies and generated output
+**/node_modules/
+**/dist/
+**/build/
+**/.expo/
+
+# Operating system files
+**/.DS_Store
+Thumbs.db

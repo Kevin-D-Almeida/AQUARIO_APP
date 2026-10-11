@@ -9,6 +9,6 @@ import { EquipmentModule } from '../equipment/equipment.module';
 @Module({
   imports: [PrismaModule, AquariumsModule, EquipmentModule],
   controllers: [MaintenanceRemindersController],
-  providers: [MaintenanceRemindersService,MaintenanceReminderRepository],
+  providers: [MaintenanceRemindersService, MaintenanceReminderRepository],
 })
 export class MaintenanceRemindersModule {}

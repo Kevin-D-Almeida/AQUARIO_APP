@@ -1,41 +1,10 @@
-import { Redirect } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-
-import { getAccessToken } from '@/src/shared/storage/auth-token.storage';
+import { Redirect } from "expo-router";
+import { useAuth } from "@/src/providers/auth-provider";
+import { LoadingState } from "@/src/shared/components/ui";
 
 export default function Index() {
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated, isRestoringSession } = useAuth();
+  if (isRestoringSession) return <LoadingState />;
 
-  useEffect(() => {
-    async function loadSession() {
-      const storedToken = await getAccessToken();
-
-      setAccessToken(storedToken);
-      setIsLoading(false);
-    }
-
-    loadSession();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  return accessToken
-    ? <Redirect href="/aquariums" />
-    : <Redirect href="/login" />;
+  return <Redirect href={isAuthenticated ? "/aquariums" : "/login"} />;
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

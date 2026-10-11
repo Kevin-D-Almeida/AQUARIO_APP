@@ -1,128 +1,134 @@
+import { Link } from "expo-router";
+import { useState } from "react";
 import {
-    ActivityIndicator,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
-} from 'react-native';
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import { useLoginViewModel } from '@/src/features/auth/view-model/use-login-view-model';
+import { useAuth } from "@/src/providers/auth-provider";
+import { AppInput, PrimaryButton } from "@/src/shared/components/ui";
+import { theme } from "@/src/shared/theme/theme";
+import { getErrorMessage } from "@/src/shared/utils/error-message";
 
 export default function LoginScreen() {
-    const {
-        email,
-        password,
-        isLoading,
-        errorMessage,
-        setEmail,
-        setPassword,
-        handleLogin,
-    } = useLoginViewModel();
+  const { signIn } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.content}>
-                <Text style={styles.title}>Aquário App</Text>
+  async function handleLogin() {
+    if (loading) return;
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !password)
+      return setError("Informe e-mail e senha.");
+    try {
+      setLoading(true);
+      setError(null);
+      await signIn({ email: normalizedEmail, password });
+    } catch (caught) {
+      setError(
+        getErrorMessage(
+          caught,
+          "Não foi possível entrar. Verifique seus dados.",
+        ),
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
-                <Text style={styles.subtitle}>
-                    Entre para acompanhar seus aquários
-                </Text>
-
-                <TextInput
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholder="E-mail"
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    editable={!isLoading}
-                    style={styles.input}
-                />
-
-                <TextInput
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="Senha"
-                    secureTextEntry
-                    editable={!isLoading}
-                    style={styles.input}
-                />
-
-                {errorMessage && (
-                    <Text style={styles.errorText}>{errorMessage}</Text>
-                )}
-
-                <Pressable
-                    style={[
-                        styles.button,
-                        isLoading && styles.buttonDisabled,
-                    ]}
-                    onPress={handleLogin}
-                    disabled={isLoading}
-                >
-                    {isLoading ? (
-                        <ActivityIndicator />
-                    ) : (
-                        <Text style={styles.buttonText}>Entrar</Text>
-                    )}
-                </Pressable>
+  return (
+    <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.brand}>
+            <View style={styles.logo}>
+              <Text style={styles.logoText}>A</Text>
             </View>
-        </SafeAreaView>
-    );
+            <Text style={styles.brandName}>Aquário</Text>
+            <Text style={styles.tagline}>
+              Seu ecossistema, sempre em equilíbrio.
+            </Text>
+          </View>
+          <View style={styles.form}>
+            <Text style={styles.title}>Bem-vindo de volta</Text>
+            <Text style={styles.subtitle}>
+              Entre para acompanhar seus aquários.
+            </Text>
+            <AppInput
+              label="E-mail"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoComplete="email"
+            />
+            <AppInput
+              label="Senha"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoComplete="current-password"
+            />
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+            <PrimaryButton
+              title="Entrar"
+              onPress={handleLogin}
+              loading={loading}
+            />
+            <Text style={styles.footer}>
+              Ainda não tem uma conta?{" "}
+              <Link href="/register" style={styles.link}>
+                Criar conta
+              </Link>
+            </Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-
-    content: {
-        flex: 1,
-        justifyContent: 'center',
-        paddingHorizontal: 24,
-        gap: 16,
-    },
-
-    title: {
-        fontSize: 32,
-        fontWeight: '700',
-        textAlign: 'center',
-    },
-
-    subtitle: {
-        fontSize: 16,
-        textAlign: 'center',
-        marginBottom: 16,
-    },
-
-    input: {
-        borderWidth: 1,
-        borderRadius: 8,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        fontSize: 16,
-    },
-
-    errorText: {
-        fontSize: 14,
-        color: '#b00020',
-    },
-
-    button: {
-        borderRadius: 8,
-        paddingVertical: 14,
-        alignItems: 'center',
-        backgroundColor: '#222',
-    },
-
-    buttonDisabled: {
-        opacity: 0.6,
-    },
-
-    buttonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
+  safe: { flex: 1, backgroundColor: theme.colors.background },
+  flex: { flex: 1 },
+  content: { flexGrow: 1, padding: 24, justifyContent: "center", gap: 34 },
+  brand: { alignItems: "center" },
+  logo: {
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    backgroundColor: theme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+    ...theme.shadow,
+  },
+  logoText: { color: "#fff", fontSize: 34, fontWeight: "900" },
+  brandName: { color: theme.colors.text, fontSize: 30, fontWeight: "900" },
+  tagline: { color: theme.colors.muted, marginTop: 5 },
+  form: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.lg,
+    padding: 22,
+    gap: 17,
+    ...theme.shadow,
+  },
+  title: { color: theme.colors.text, fontSize: 24, fontWeight: "800" },
+  subtitle: { color: theme.colors.muted, marginTop: -10, marginBottom: 4 },
+  error: { color: theme.colors.danger, lineHeight: 19 },
+  footer: { color: theme.colors.muted, textAlign: "center" },
+  link: { color: theme.colors.primary, fontWeight: "800" },
 });

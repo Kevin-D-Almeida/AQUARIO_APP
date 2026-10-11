@@ -8,9 +8,21 @@ import { EquipmentModule } from './modules/equipment/equipment.module';
 import { MaintenanceRemindersModule } from './modules/maintenance-reminders/maintenance-reminders.module';
 import { MeasurementsModule } from './modules/measurements/measurement.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [PrismaModule, UsersModule, AquariumsModule, EquipmentModule, MaintenanceRemindersModule, MeasurementsModule, AuthModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    PrismaModule,
+    UsersModule,
+    AquariumsModule,
+    EquipmentModule,
+    MaintenanceRemindersModule,
+    MeasurementsModule,
+    AuthModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

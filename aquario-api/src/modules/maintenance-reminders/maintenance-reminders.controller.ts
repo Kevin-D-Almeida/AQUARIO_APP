@@ -14,8 +14,9 @@ import { UpdateMaintenanceReminderDto } from './dto/update-maintenance-reminder.
 import { AuthGuard } from '@nestjs/passport';
 import { UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CompleteMaintenanceReminderDto } from './dto/complete-maintenance-reminder.dto';
 
-@UseGuards(AuthGuard("jwt"))
+@UseGuards(AuthGuard('jwt'))
 @Controller('maintenance-reminders')
 export class MaintenanceRemindersController {
   constructor(
@@ -25,29 +26,29 @@ export class MaintenanceRemindersController {
   @Post()
   create(
     @Body() body: CreateMaintenanceReminderDto,
-    @CurrentUser("id") userId: number
+    @CurrentUser('id') userId: number,
   ) {
-    return this.maintenanceRemindersService.create(body,userId);
+    return this.maintenanceRemindersService.create(body, userId);
   }
 
   @Get()
-  findAll(
-    @CurrentUser("id") userId:number
-  ) {
+  findAll(@CurrentUser('id') userId: number) {
     return this.maintenanceRemindersService.findAll(userId);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number, 
-    @CurrentUser("id") userId: number) {
-    return this.maintenanceRemindersService.findOne(id,userId);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser('id') userId: number,
+  ) {
+    return this.maintenanceRemindersService.findOne(id, userId);
   }
 
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateMaintenanceReminderDto,
-    @CurrentUser("id") userId:number
+    @CurrentUser('id') userId: number,
   ) {
     return this.maintenanceRemindersService.update(id, body, userId);
   }
@@ -55,15 +56,21 @@ export class MaintenanceRemindersController {
   @Patch(':id/done')
   markAsDone(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser("id")userId:number) {
-    return this.maintenanceRemindersService.markAsDone(id,userId);
+    @Body() body: CompleteMaintenanceReminderDto,
+    @CurrentUser('id') userId: number,
+  ) {
+    return this.maintenanceRemindersService.markAsDone(
+      id,
+      userId,
+      body.timezoneOffsetMinutes,
+    );
   }
 
   @Delete(':id')
   remove(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser("id")userId:number
-) {
-    return this.maintenanceRemindersService.remove(id,userId);
+    @CurrentUser('id') userId: number,
+  ) {
+    return this.maintenanceRemindersService.remove(id, userId);
   }
 }

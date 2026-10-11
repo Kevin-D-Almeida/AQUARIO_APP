@@ -1,254 +1,334 @@
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import {
-    ActivityIndicator,
-    FlatList,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
+  FlatList,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import type { Aquarium } from '@/src/features/aquariums/model/aquarium.types';
-import { useAquariumsViewModel } from '@/src/features/aquariums/view-model/use-aquariums-view-model';
-import { router } from 'expo-router';
+import { formatAquariumType } from "@/src/features/aquariums/model/aquarium.constants";
+import type { Aquarium } from "@/src/features/aquariums/model/aquarium.types";
+import { useAquariumsViewModel } from "@/src/features/aquariums/view-model/use-aquariums-view-model";
+import {
+  Card,
+  EmptyState,
+  LoadingState,
+  PrimaryButton,
+  ScreenHeader,
+} from "@/src/shared/components/ui";
+import { theme } from "@/src/shared/theme/theme";
 
 export default function AquariumsScreen() {
-    const {
-        aquariums,
-        isLoading,
-        isError,
-        refresh,
-        isRefreshing,
-    } = useAquariumsViewModel();
+  const { aquariums, isLoading, isError, refresh, isRefreshing } =
+    useAquariumsViewModel();
 
-    if (isLoading) {
-        return (
-            <View style={styles.centeredContainer}>
-                <ActivityIndicator size="large" />
-                <Text style={styles.feedbackText}>
-                    Carregando aquários...
-                </Text>
-            </View>
-        );
-    }
+  if (isLoading) return <LoadingState />;
 
-    if (isError) {
-        return (
-            <View style={styles.centeredContainer}>
-                <Text style={styles.errorTitle}>
-                    Não foi possível carregar os aquários
-                </Text>
-
-                <Pressable style={styles.retryButton} onPress={() => refresh()}>
-                    <Text style={styles.retryButtonText}>Tentar novamente</Text>
-                </Pressable>
-            </View>
-        );
-    }
-
-    return (
-        <SafeAreaView style={styles.container}>
-            <FlatList
-                data={aquariums}
-                keyExtractor={(item) => String(item.id)}
-                contentContainerStyle={[
-                    styles.listContent,
-                    aquariums.length === 0 && styles.emptyListContent,
-                ]}
-                refreshing={isRefreshing}
-                onRefresh={refresh}
-                ListHeaderComponent={
-                    <View style={styles.header}>
-                        <View style={styles.headerText}>
-                            <Text style={styles.title}>Meus aquários</Text>
-
-                            <Text style={styles.subtitle}>
-                                Acompanhe seus aquários em um só lugar
-                            </Text>
-                        </View>
-
-                        <Pressable
-                            style={styles.createButton}
-                            onPress={() =>
-                                router.navigate('/aquariums/create')
-                            }
-                        >
-                            <Text style={styles.createButtonText}>
-                                + Novo
-                            </Text>
-                        </Pressable>
-                    </View>
-                }
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyTitle}>
-                            Nenhum aquário cadastrado
-                        </Text>
-
-                        <Text style={styles.emptyMessage}>
-                            Cadastre seu primeiro aquário para começar.
-                        </Text>
-                    </View>
-                }
-                renderItem={({ item }) => <AquariumCard aquarium={item} />}
+  return (
+    <SafeAreaView style={styles.safe}>
+      <FlatList
+        data={aquariums}
+        keyExtractor={(item) => String(item.id)}
+        refreshing={isRefreshing}
+        onRefresh={refresh}
+        contentContainerStyle={[
+          styles.content,
+          !aquariums.length && styles.grow,
+        ]}
+        ListHeaderComponent={
+          <>
+            <ScreenHeader
+              eyebrow="PAINEL"
+              title="Meus aquários"
+              subtitle="A saúde de cada ecossistema em um só lugar."
             />
-        </SafeAreaView>
-    );
+
+            <CreateAquariumCard />
+
+            {isError ? (
+              <Card style={styles.errorCard}>
+                <Text style={styles.errorTitle}>
+                  Não foi possível sincronizar
+                </Text>
+                <Text style={styles.muted}>
+                  Verifique a API e tente novamente.
+                </Text>
+                <PrimaryButton
+                  title="Tentar novamente"
+                  variant="ghost"
+                  onPress={() => refresh()}
+                />
+              </Card>
+            ) : null}
+
+            {aquariums.length ? (
+              <View style={styles.listHeading}>
+                <View>
+                  <Text style={styles.listTitle}>Seus ecossistemas</Text>
+                  <Text style={styles.listSubtitle}>
+                    Toque em um aquário para ver os detalhes
+                  </Text>
+                </View>
+                <View style={styles.countBadge}>
+                  <Text style={styles.countText}>{aquariums.length}</Text>
+                </View>
+              </View>
+            ) : null}
+          </>
+        }
+        ListEmptyComponent={
+          !isError ? (
+            <EmptyState
+              title="Nenhum aquário cadastrado"
+              message="Use o botão acima para cadastrar seu primeiro ecossistema."
+            />
+          ) : null
+        }
+        renderItem={({ item }) => <AquariumCard aquarium={item} />}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
+    </SafeAreaView>
+  );
 }
 
-type AquariumCardProps = {
-    aquarium: Aquarium;
-};
+function CreateAquariumCard() {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Cadastrar um novo aquário"
+      accessibilityHint="Abre o formulário de cadastro de aquário"
+      onPress={() => router.push("/aquariums/create")}
+      style={({ pressed }) => [
+        styles.createCard,
+        pressed && styles.createCardPressed,
+      ]}
+    >
+      <View style={styles.createIcon}>
+        <Ionicons name="add" size={27} color="#fff" />
+      </View>
 
-function AquariumCard({ aquarium }: AquariumCardProps) {
-    return (
-        <Pressable style={styles.card}>
+      <View style={styles.createTextContainer}>
+        <Text style={styles.createTitle}>Cadastrar novo aquário</Text>
+        <Text style={styles.createSubtitle}>
+          Adicione dimensões, tipo e informações básicas
+        </Text>
+      </View>
+
+      <Ionicons name="chevron-forward" size={22} color={theme.colors.primary} />
+    </Pressable>
+  );
+}
+
+function AquariumCard({ aquarium }: { aquarium: Aquarium }) {
+  const measurements = aquarium.measurements?.length ?? 0;
+  const reminders =
+    aquarium.reminders?.filter((item) => item.status === "PENDING").length ?? 0;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Abrir aquário ${aquarium.name}`}
+      onPress={() =>
+        router.push({
+          pathname: "/aquariums/[id]",
+          params: { id: aquarium.id },
+        })
+      }
+      style={({ pressed }) => pressed && styles.aquariumCardPressed}
+    >
+      <Card>
+        <View style={styles.cardTop}>
+          <View style={styles.waterIcon}>
+            <Ionicons name="water" color={theme.colors.primary} size={23} />
+          </View>
+
+          <View style={styles.cardHeading}>
             <Text style={styles.cardTitle}>{aquarium.name}</Text>
-
-            <Text style={styles.cardDetails}>
-                {formatAquariumType(aquarium.type)} •{' '}
-                {aquarium.volumeLiters.toFixed(1)} L
+            <Text style={styles.muted}>
+              {formatAquariumType(aquarium.type)}
             </Text>
+          </View>
 
-            <Text style={styles.cardDimensions}>
-                {aquarium.widthCm} × {aquarium.heightCm} ×{' '}
-                {aquarium.depthCm} cm
-            </Text>
-        </Pressable>
-    );
+          <Ionicons
+            name="chevron-forward"
+            color={theme.colors.muted}
+            size={20}
+          />
+        </View>
+
+        <View style={styles.metrics}>
+          <Metric
+            label="Volume"
+            value={`${aquarium.volumeLiters.toFixed(1)} L`}
+          />
+          <Metric label="Medições" value={String(measurements)} />
+          <Metric label="Pendências" value={String(reminders)} />
+        </View>
+
+        <Text style={styles.dimensions}>
+          {aquarium.widthCm} × {aquarium.heightCm} × {aquarium.depthCm} cm
+        </Text>
+      </Card>
+    </Pressable>
+  );
 }
 
-function formatAquariumType(type: Aquarium['type']): string {
-    const labels: Record<Aquarium['type'], string> = {
-        FRESHWATER: 'Água doce',
-        MARINE: 'Marinho',
-        BRACKISH: 'Água salobra',
-        PLANTED: 'Plantado',
-        BLACKWATER: 'Águas negras',
-    };
-
-    return labels[type];
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.metric}>
+      <Text style={styles.metricValue}>{value}</Text>
+      <Text style={styles.metricLabel}>{label}</Text>
+    </View>
+  );
 }
-
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-
-    listContent: {
-        padding: 24,
-        gap: 16,
-    },
-
-    emptyListContent: {
-        flexGrow: 1,
-    },
-
-    header: {
-        marginBottom: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 16,
-    },
-
-    headerText: {
-        flex: 1,
-    },
-
-    createButton: {
-        borderRadius: 8,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        backgroundColor: '#222',
-    },
-
-    createButtonText: {
-        color: '#fff',
-        fontWeight: '600',
-    },
-
-    title: {
-        fontSize: 28,
-        fontWeight: '700',
-    },
-
-    subtitle: {
-        marginTop: 6,
-        fontSize: 15,
-        opacity: 0.7,
-    },
-
-    card: {
-        padding: 18,
-        borderWidth: 1,
-        borderRadius: 12,
-    },
-
-    cardTitle: {
-        fontSize: 19,
-        fontWeight: '700',
-    },
-
-    cardDetails: {
-        marginTop: 8,
-        fontSize: 15,
-    },
-
-    cardDimensions: {
-        marginTop: 6,
-        fontSize: 13,
-        opacity: 0.65,
-    },
-
-    centeredContainer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-        gap: 16,
-    },
-
-    feedbackText: {
-        fontSize: 15,
-    },
-
-    errorTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        textAlign: 'center',
-    },
-
-    retryButton: {
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 8,
-        backgroundColor: '#222',
-    },
-
-    retryButtonText: {
-        color: '#fff',
-        fontWeight: '600',
-    },
-
-    emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 24,
-    },
-
-    emptyTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        textAlign: 'center',
-    },
-
-    emptyMessage: {
-        marginTop: 8,
-        fontSize: 15,
-        textAlign: 'center',
-        opacity: 0.7,
-    },
+  safe: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  content: {
+    padding: 22,
+    paddingBottom: 100,
+  },
+  grow: {
+    flexGrow: 1,
+  },
+  createCard: {
+    minHeight: 92,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    padding: 16,
+    marginBottom: 26,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: "#B9E0DE",
+    backgroundColor: theme.colors.primarySoft,
+  },
+  createCardPressed: {
+    opacity: 0.68,
+    transform: [{ scale: 0.99 }],
+  },
+  createIcon: {
+    width: 52,
+    height: 52,
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 17,
+    backgroundColor: theme.colors.primary,
+    ...theme.shadow,
+  },
+  createTextContainer: {
+    flex: 1,
+  },
+  createTitle: {
+    color: theme.colors.primaryDark,
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  createSubtitle: {
+    color: theme.colors.muted,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 4,
+  },
+  listHeading: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  listTitle: {
+    color: theme.colors.text,
+    fontSize: 19,
+    fontWeight: "900",
+  },
+  listSubtitle: {
+    color: theme.colors.muted,
+    fontSize: 12,
+    marginTop: 3,
+  },
+  countBadge: {
+    minWidth: 34,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.primarySoft,
+  },
+  countText: {
+    color: theme.colors.primaryDark,
+    fontWeight: "900",
+  },
+  aquariumCardPressed: {
+    opacity: 0.72,
+  },
+  cardTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  cardHeading: {
+    flex: 1,
+  },
+  waterIcon: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+    backgroundColor: theme.colors.primarySoft,
+  },
+  cardTitle: {
+    color: theme.colors.text,
+    fontSize: 19,
+    fontWeight: "800",
+  },
+  muted: {
+    color: theme.colors.muted,
+    fontSize: 14,
+  },
+  metrics: {
+    flexDirection: "row",
+    marginTop: 18,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  metric: {
+    flex: 1,
+  },
+  metricValue: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  metricLabel: {
+    color: theme.colors.muted,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  dimensions: {
+    color: theme.colors.muted,
+    fontSize: 12,
+    marginTop: 14,
+  },
+  separator: {
+    height: 14,
+  },
+  errorCard: {
+    gap: 10,
+    marginBottom: 18,
+  },
+  errorTitle: {
+    color: theme.colors.danger,
+    fontSize: 17,
+    fontWeight: "800",
+  },
 });

@@ -2,9 +2,11 @@ import { ReminderType } from '@prisma/client';
 import {
   IsDateString,
   IsEnum,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
+  Min,
 } from 'class-validator';
 
 export class CreateMaintenanceReminderDto {
@@ -27,4 +29,9 @@ export class CreateMaintenanceReminderDto {
   @IsOptional()
   @IsNumber()
   equipmentId?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  repeatEveryDays?: number;
 }

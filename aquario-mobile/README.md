@@ -1,50 +1,89 @@
-# Welcome to your Expo app 👋
+# Aquário Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicativo React Native com Expo para gerenciamento de aquários, equipamentos,
+medições e lembretes de manutenção.
 
-## Get started
+## Requisitos
 
-1. Install dependencies
+- Node.js 20.19 ou superior
+- Expo Go compatível com o SDK 54
+- API NestJS e banco de dados em execução
+- Celular e computador conectados à mesma rede
+
+## Configuração
+
+1. Instale as dependências:
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. Copie `.env.example` para `.env`.
 
-   ```bash
-   npx expo start
+3. Substitua o endereço pelo IP do computador que executa a API:
+
+   ```env
+   EXPO_PUBLIC_API_URL=http://192.168.0.10:3000
    ```
 
-In the output, you'll find options to open the app in a
+   Não use `localhost` em um celular físico. O celular interpreta `localhost`
+   como o próprio aparelho.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+4. Inicie a API ouvindo em `0.0.0.0`.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+5. Inicie o aplicativo:
 
-## Get a fresh project
+   ```bash
+   npx expo start --clear
+   ```
 
-When you're ready, run:
+6. Leia o QR Code usando o Expo Go.
+
+## Funcionalidades do Beta
+
+- cadastro, login, restauração e encerramento de sessão;
+- armazenamento seguro do token;
+- criação, consulta, edição e exclusão de aquários;
+- criação, edição e exclusão de equipamentos;
+- criação, edição e exclusão de medições manuais;
+- criação de lembretes com calendário e equipamento opcional;
+- definição de horário e repetição diária, semanal ou personalizada;
+- notificações locais uma hora antes e no horário da atividade;
+- aviso de preparo da água um dia antes de TPA e limpeza de filtro;
+- reforços amigáveis para atividades que continuam pendentes;
+- edição, conclusão e exclusão de lembretes;
+- agenda geral com atualização por gesto;
+- proteção das rotas autenticadas;
+- mensagens de erro de rede e regras do backend.
+
+## Verificações
 
 ```bash
-npm run reset-project
+npm run lint
+npx tsc --noEmit
+npx expo export --platform android
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Roteiro do teste interno
 
-## Learn more
+1. Cadastre uma nova conta.
+2. Feche e abra o aplicativo para confirmar a restauração da sessão.
+3. Crie um aquário e altere uma de suas dimensões.
+4. Cadastre e edite um equipamento.
+5. Cadastre e edite uma medição.
+6. Crie um lembrete vinculado ao equipamento.
+7. Edite e conclua o lembrete pela agenda.
+8. Use “Testar notificação” na tela de perfil.
+9. Confirme que concluir uma atividade recorrente cria a próxima ocorrência.
+10. Confirme que um equipamento com lembrete não pode ser excluído.
+11. Exclua o lembrete, a medição e o equipamento.
+12. Exclua o aquário e encerre a sessão.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Limite desta versão
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+O Beta usa medições manuais. O gerenciamento de dispositivos IoT ainda não
+possui interface no aplicativo.
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+As notificações desta versão são locais e ficam agendadas no aparelho. No
+Android, notificações remotas não funcionam no Expo Go a partir do SDK 53, mas
+as notificações locais usadas pelo Aquário continuam disponíveis.

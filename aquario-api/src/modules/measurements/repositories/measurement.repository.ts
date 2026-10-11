@@ -16,10 +16,10 @@ export class MeasurementsRepository {
     });
   }
 
-  findAll(userId:number) {
+  findAll(userId: number) {
     return this.prisma.measurement.findMany({
-      where:{
-        aquarium:{userId}
+      where: {
+        aquarium: { userId },
       },
       include: {
         aquarium: true,
@@ -31,9 +31,12 @@ export class MeasurementsRepository {
     });
   }
 
-  findById(id: number) {
+  findById(id: number, userId: number) {
     return this.prisma.measurement.findUnique({
-      where: { id },
+      where: {
+        id,
+        aquarium: { userId },
+      },
       include: {
         aquarium: true,
         device: true,
@@ -42,23 +45,23 @@ export class MeasurementsRepository {
   }
 
   findByAquariumId(aquariumId: number) {
-  return this.prisma.measurement.findMany({
-    where: { aquariumId },
-    include: {
-      aquarium: true,
-      device: true,
-    },
-    orderBy: {
-      measuredAt: 'desc',
-    },
-  });
-}
-  update(id: number, data: UpdateMeasurementDto,userId:number) {
+    return this.prisma.measurement.findMany({
+      where: { aquariumId },
+      include: {
+        aquarium: true,
+        device: true,
+      },
+      orderBy: {
+        measuredAt: 'desc',
+      },
+    });
+  }
+  update(id: number, data: UpdateMeasurementDto, userId: number) {
     return this.prisma.measurement.update({
-      where: { 
+      where: {
         id,
-        aquarium:{userId}
-       },
+        aquarium: { userId },
+      },
       data: {
         ...data,
         measuredAt: data.measuredAt ? new Date(data.measuredAt) : undefined,
@@ -66,12 +69,21 @@ export class MeasurementsRepository {
     });
   }
 
-  delete(id: number,userId:number) {
+  delete(id: number, userId: number) {
     return this.prisma.measurement.delete({
-      where: { 
+      where: {
         id,
-        aquarium:{userId}
-       },
+        aquarium: { userId },
+      },
+    });
+  }
+
+  findDeviceByIdAndUser(id: number, userId: number) {
+    return this.prisma.ioTDevice.findFirst({
+      where: {
+        id,
+        aquarium: { userId },
+      },
     });
   }
 }

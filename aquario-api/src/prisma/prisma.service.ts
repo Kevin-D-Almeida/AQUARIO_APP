@@ -1,23 +1,26 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  constructor() {
-    
-  const adapter = new PrismaMariaDb({
-    host: 'localhost',
-    port: 3306,
-    user: 'root',
-    password: 'root',
-    database: 'aquario',
-    connectionLimit: 5,
-    allowPublicKeyRetrieval: true,
-  });
+  constructor(configService: ConfigService) {
+    const databaseUrl = new URL(
+      configService.getOrThrow<string>('DATABASE_URL'),
+    );
+    const adapter = new PrismaMariaDb({
+      host: databaseUrl.hostname,
+      port: Number(databaseUrl.port || 3306),
+      user: decodeURIComponent(databaseUrl.username),
+      password: decodeURIComponent(databaseUrl.password),
+      database: databaseUrl.pathname.replace(/^\//, ''),
+      connectionLimit: 5,
+      allowPublicKeyRetrieval: true,
+    });
 
     super({ adapter });
   }

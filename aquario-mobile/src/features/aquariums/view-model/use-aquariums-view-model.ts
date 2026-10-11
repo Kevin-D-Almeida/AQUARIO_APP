@@ -1,13 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-
-import { getAquariums } from '../services/aquariums.service';
+import { useQuery } from "@tanstack/react-query";
+import { aquariumKeys } from "../queries/aquarium.queries";
+import { getAquariums } from "../services/aquariums.service";
 
 export function useAquariumsViewModel() {
-  const query = useQuery({
-    queryKey: ['aquariums'],
-    queryFn: getAquariums,
-  });
-
+  const query = useQuery({ queryKey: aquariumKeys.all, queryFn: getAquariums });
   return {
     aquariums: query.data ?? [],
     isLoading: query.isLoading,

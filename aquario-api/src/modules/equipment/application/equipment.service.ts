@@ -1,8 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateEquipmentDto } from '../dto/create-equipment.dto';
 import { UpdateEquipmentDto } from '../dto/update-equipment.dto';
 import { EquipmentRepository } from '../repositories/equipments.repository';
-import { AquariumsRepository } from 'src/modules/aquariums/repositories/aquariums.repository';
+import { AquariumsRepository } from '../../aquariums/repositories/aquariums.repository';
 
 @Injectable()
 export class EquipmentService {
@@ -29,7 +33,10 @@ export class EquipmentService {
   }
 
   async findOne(id: number, userId: number) {
-    const equipment = await this.equipmentRepository.findByIdAndUser(id,userId);
+    const equipment = await this.equipmentRepository.findByIdAndUser(
+      id,
+      userId,
+    );
 
     if (!equipment) {
       throw new NotFoundException('Equipamento não encontrado');
@@ -38,13 +45,20 @@ export class EquipmentService {
     return equipment;
   }
 
-  async update(id: number, data: UpdateEquipmentDto,userId: number) {
-    await this.findOne(id,userId);
-    return this.equipmentRepository.update(id, data,userId);
+  async update(id: number, data: UpdateEquipmentDto, userId: number) {
+    await this.findOne(id, userId);
+    return this.equipmentRepository.update(id, data, userId);
   }
 
-  async remove(id: number, userId:number) {
-    await this.findOne(id,userId);
-    return this.equipmentRepository.delete(id,userId);
+  async remove(id: number, userId: number) {
+    const equipment = await this.findOne(id, userId);
+
+    if (equipment.reminders.length > 0) {
+      throw new ConflictException(
+        'Não é possível excluir um equipamento que possui lembretes',
+      );
+    }
+
+    return this.equipmentRepository.delete(id, userId);
   }
 }

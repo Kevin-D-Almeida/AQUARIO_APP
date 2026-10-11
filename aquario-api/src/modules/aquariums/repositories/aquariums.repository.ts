@@ -13,26 +13,26 @@ export class AquariumsRepository {
     });
   }
 
-findByUser(userId: number) {
-  return this.prisma.aquarium.findMany({
-    where: {
-      userId,
-    },
-    include: {
-      equipment: true,
-      reminders: true,
-      measurements: true,
-      iotDevices: true,
-    },
-  });
-}
+  findByUser(userId: number) {
+    return this.prisma.aquarium.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        equipment: true,
+        reminders: true,
+        measurements: true,
+        iotDevices: true,
+      },
+    });
+  }
 
-  findById(id: number, userId:number) {
+  findById(id: number, userId: number) {
     return this.prisma.aquarium.findUnique({
-      where: { 
+      where: {
         id,
-        userId
-       },
+        userId,
+      },
       include: {
         equipment: true,
         reminders: true,
@@ -43,30 +43,49 @@ findByUser(userId: number) {
   }
 
   findByIdAndUser(id: number, userId: number) {
-  return this.prisma.aquarium.findFirst({
-    where: {
-      id,
-      userId,
-    },
-  });
-}
-
-  update(id: number, data: UpdateAquariumDto & { volumeLiters?: number },userId:number) {
-    return this.prisma.aquarium.update({
-      where: { 
+    return this.prisma.aquarium.findFirst({
+      where: {
         id,
-        userId
-       },
+        userId,
+      },
+    });
+  }
+
+  update(
+    id: number,
+    data: UpdateAquariumDto & { volumeLiters?: number },
+    userId: number,
+  ) {
+    return this.prisma.aquarium.update({
+      where: {
+        id,
+        userId,
+      },
       data,
     });
   }
 
-  delete(id: number,userId:number) {
-    return this.prisma.aquarium.delete({
-      where: { 
-        id,
-        userId
-       },
+  delete(id: number, userId: number) {
+    return this.prisma.$transaction(async (transaction) => {
+      await transaction.maintenanceReminder.deleteMany({
+        where: { aquariumId: id },
+      });
+      await transaction.measurement.deleteMany({
+        where: { aquariumId: id },
+      });
+      await transaction.equipment.deleteMany({
+        where: { aquariumId: id },
+      });
+      await transaction.ioTDevice.deleteMany({
+        where: { aquariumId: id },
+      });
+
+      return transaction.aquarium.delete({
+        where: {
+          id,
+          userId,
+        },
+      });
     });
   }
 }

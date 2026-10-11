@@ -28,4 +28,17 @@ export class UsersRepository {
       where: { id },
     });
   }
+
+  updateAvatar(id: number, avatarUrl: string | null) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { avatarUrl },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatarUrl: true,
+      },
+    });
+  }
 }

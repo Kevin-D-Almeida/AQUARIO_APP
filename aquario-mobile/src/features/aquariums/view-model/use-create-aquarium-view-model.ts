@@ -1,84 +1,54 @@
-import {
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
-import axios from 'axios';
-import { router } from 'expo-router';
-import { useState } from 'react';
-
-import type { AquariumType } from '../model/aquarium.types';
-import { createAquarium } from '../services/aquariums.service';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { router } from "expo-router";
+import { useState } from "react";
+import type { AquariumType } from "../model/aquarium.types";
+import { aquariumKeys } from "../queries/aquarium.queries";
+import { createAquarium } from "../services/aquariums.service";
+import { getErrorMessage } from "@/src/shared/utils/error-message";
+import { showSuccess } from "@/src/shared/utils/feedback";
 
 export function useCreateAquariumViewModel() {
   const queryClient = useQueryClient();
-
-  const [name, setName] = useState('');
-  const [type, setType] =
-    useState<AquariumType>('FRESHWATER');
-
-  const [widthCm, setWidthCm] = useState('');
-  const [heightCm, setHeightCm] = useState('');
-  const [depthCm, setDepthCm] = useState('');
-  const [description, setDescription] = useState('');
-
-  const [errorMessage, setErrorMessage] =
-    useState<string | null>(null);
-
+  const [name, setName] = useState("");
+  const [type, setType] = useState<AquariumType>("FRESHWATER");
+  const [widthCm, setWidthCm] = useState("");
+  const [heightCm, setHeightCm] = useState("");
+  const [depthCm, setDepthCm] = useState("");
+  const [description, setDescription] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const mutation = useMutation({
     mutationFn: createAquarium,
-
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['aquariums'],
-      });
-
+      await queryClient.invalidateQueries({ queryKey: aquariumKeys.all });
+      setName("");
+      setType("FRESHWATER");
+      setWidthCm("");
+      setHeightCm("");
+      setDepthCm("");
+      setDescription("");
+      setErrorMessage(null);
+      showSuccess("Aquário cadastrado.");
       router.back();
     },
-
-    onError: (error) => {
-      if (axios.isAxiosError(error)) {
-        const apiMessage = error.response?.data?.message;
-
-        if (Array.isArray(apiMessage)) {
-          setErrorMessage(apiMessage.join('\n'));
-          return;
-        }
-
-        if (typeof apiMessage === 'string') {
-          setErrorMessage(apiMessage);
-          return;
-        }
-      }
-
+    onError: (error) =>
       setErrorMessage(
-        'Não foi possível cadastrar o aquário.',
-      );
-    },
+        getErrorMessage(error, "Não foi possível cadastrar o aquário."),
+      ),
   });
 
   function handleSubmit() {
+    if (mutation.isPending) return;
     setErrorMessage(null);
-
-    const parsedWidth = Number(widthCm);
-    const parsedHeight = Number(heightCm);
-    const parsedDepth = Number(depthCm);
-
-    if (!name.trim()) {
-      setErrorMessage('Informe o nome do aquário.');
-      return;
-    }
-
+    const parsedWidth = Number(widthCm.replace(",", "."));
+    const parsedHeight = Number(heightCm.replace(",", "."));
+    const parsedDepth = Number(depthCm.replace(",", "."));
+    if (!name.trim()) return setErrorMessage("Informe o nome do aquário.");
     if (
-      parsedWidth <= 0 ||
-      parsedHeight <= 0 ||
-      parsedDepth <= 0
-    ) {
-      setErrorMessage(
-        'As dimensões devem ser maiores que zero.',
-      );
-      return;
-    }
-
+      ![parsedWidth, parsedHeight, parsedDepth].every(
+        (value) => Number.isFinite(value) && value > 0,
+      )
+    )
+      return setErrorMessage("Informe dimensões numéricas maiores que zero.");
     mutation.mutate({
       name: name.trim(),
       type,
@@ -88,7 +58,6 @@ export function useCreateAquariumViewModel() {
       description: description.trim() || undefined,
     });
   }
-
   return {
     name,
     type,
@@ -96,10 +65,8 @@ export function useCreateAquariumViewModel() {
     heightCm,
     depthCm,
     description,
-
     isSubmitting: mutation.isPending,
     errorMessage,
-
     setName,
     setType,
     setWidthCm,

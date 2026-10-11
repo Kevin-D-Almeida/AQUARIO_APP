@@ -17,14 +17,16 @@ export class AuthService {
   ) {}
 
   async register(data: RegisterDto) {
-    const userAlreadyExists = await this.usersRepository.findByEmail(data.email);
+    const userAlreadyExists = await this.usersRepository.findByEmail(
+      data.email,
+    );
 
     if (userAlreadyExists) {
       throw new ConflictException('E-mail já cadastrado');
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
- 
+
     const user = await this.usersRepository.create({
       name: data.name,
       email: data.email,
@@ -35,6 +37,7 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
+      avatarUrl: user.avatarUrl,
     };
   }
 
@@ -62,6 +65,7 @@ export class AuthService {
         id: user.id,
         name: user.name,
         email: user.email,
+        avatarUrl: user.avatarUrl,
       },
     };
   }

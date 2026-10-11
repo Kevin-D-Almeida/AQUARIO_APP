@@ -5,12 +5,14 @@
 **/.env
 **/.env.*
 !**/.env.example
+!**/.env.*.example
 
 # Dependencies and generated output
 **/node_modules/
 **/dist/
 **/build/
 **/.expo/
+**/uploads/
 
 # Operating system files
 **/.DS_Store

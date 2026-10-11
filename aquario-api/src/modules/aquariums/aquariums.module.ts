@@ -13,6 +13,6 @@ import { AquariumsRepository } from './repositories/aquariums.repository';
     AquariumCalculationService,
     AquariumsRepository,
   ],
-  exports:[AquariumsRepository]
+  exports: [AquariumsRepository],
 })
 export class AquariumsModule {}

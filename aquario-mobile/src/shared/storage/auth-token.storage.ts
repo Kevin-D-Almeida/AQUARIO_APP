@@ -1,6 +1,6 @@
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from "expo-secure-store";
 
-const ACCESS_TOKEN_KEY = 'aquario-app.access-token';
+const ACCESS_TOKEN_KEY = "aquario-app.access-token";
 
 export async function saveAccessToken(token: string): Promise<void> {
   await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, token);

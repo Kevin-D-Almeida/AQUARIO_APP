@@ -12,12 +12,11 @@ export class AquariumsService {
   ) {}
 
   async create(data: CreateAquariumDto, userId: number) {
-    const volumeLiters =
-      this.aquariumCalculationService.calculateVolumeLiters(
-        data.widthCm,
-        data.heightCm,
-        data.depthCm,
-      );
+    const volumeLiters = this.aquariumCalculationService.calculateVolumeLiters(
+      data.widthCm,
+      data.heightCm,
+      data.depthCm,
+    );
 
     return this.aquariumsRepository.create({
       ...data,
@@ -30,8 +29,8 @@ export class AquariumsService {
     return this.aquariumsRepository.findByUser(userId);
   }
 
-  async findOne(id: number, userId:number) {
-    const aquarium = await this.aquariumsRepository.findById(id,userId);
+  async findOne(id: number, userId: number) {
+    const aquarium = await this.aquariumsRepository.findById(id, userId);
 
     if (!aquarium) {
       throw new NotFoundException('Aquário não encontrado');
@@ -40,31 +39,35 @@ export class AquariumsService {
     return aquarium;
   }
 
-  async update(id: number, data: UpdateAquariumDto,userId:number) {
-    await this.findOne(id,userId);
+  async update(id: number, data: UpdateAquariumDto, userId: number) {
+    const aquarium = await this.findOne(id, userId);
 
     const shouldRecalculateVolume =
-      data.widthCm !== undefined &&
-      data.heightCm !== undefined &&
+      data.widthCm !== undefined ||
+      data.heightCm !== undefined ||
       data.depthCm !== undefined;
 
     const volumeLiters = shouldRecalculateVolume
       ? this.aquariumCalculationService.calculateVolumeLiters(
-          data.widthCm!,
-          data.heightCm!,
-          data.depthCm!,
+          data.widthCm ?? aquarium.widthCm,
+          data.heightCm ?? aquarium.heightCm,
+          data.depthCm ?? aquarium.depthCm,
         )
       : undefined;
 
-    return this.aquariumsRepository.update(id, {
-      ...data,
-      ...(volumeLiters !== undefined && { volumeLiters }),
-    },userId);
+    return this.aquariumsRepository.update(
+      id,
+      {
+        ...data,
+        ...(volumeLiters !== undefined && { volumeLiters }),
+      },
+      userId,
+    );
   }
 
-  async remove(id: number,userId:number) {
-    await this.findOne(id,userId);
+  async remove(id: number, userId: number) {
+    await this.findOne(id, userId);
 
-    return this.aquariumsRepository.delete(id,userId);
+    return this.aquariumsRepository.delete(id, userId);
   }
 }

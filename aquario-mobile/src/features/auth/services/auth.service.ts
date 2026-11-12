@@ -4,6 +4,7 @@ import type {
   LoginRequest,
   LoginResponse,
   RegisterRequest,
+  RegisterResponse,
 } from "../model/auth.types";
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
@@ -14,8 +15,16 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 
 export async function register(
   data: RegisterRequest,
-): Promise<AuthenticatedUser> {
-  const response = await api.post<AuthenticatedUser>("/auth/register", data);
+): Promise<RegisterResponse> {
+  const response = await api.post<RegisterResponse>("/auth/register", data);
+  return response.data;
+}
+
+export async function resendVerificationEmail(email: string) {
+  const response = await api.post<{ message: string }>(
+    "/auth/resend-verification",
+    { email },
+  );
   return response.data;
 }
 

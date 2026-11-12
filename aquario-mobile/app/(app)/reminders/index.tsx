@@ -70,6 +70,15 @@ export default function RemindersScreen() {
       ),
   });
 
+  if (query.fetchStatus === "paused" && !query.data) {
+    return (
+      <ErrorState
+        title="Sem conexão com a API"
+        message="A sincronização da agenda está pausada. Verifique sua conexão e tente novamente."
+        onRetry={() => void query.refetch()}
+      />
+    );
+  }
   if (query.isLoading) return <LoadingState />;
   if (query.isError) {
     return <ErrorState onRetry={() => void query.refetch()} />;

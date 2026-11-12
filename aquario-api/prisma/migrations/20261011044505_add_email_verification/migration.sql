@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `User` ADD COLUMN `emailVerificationToken` VARCHAR(191) NULL,
+    ADD COLUMN `emailVerificationTokenExpiresAt` DATETIME(3) NULL,
+    ADD COLUMN `emailVerifiedAt` DATETIME(3) NULL,
+    ADD COLUMN `status` ENUM('PENDING_VERIFICATION', 'ACTIVE', 'BLOCKED') NOT NULL DEFAULT 'PENDING_VERIFICATION';

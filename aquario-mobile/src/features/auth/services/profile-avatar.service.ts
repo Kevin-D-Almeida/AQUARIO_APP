@@ -12,7 +12,10 @@ export async function uploadProfileAvatar(uri: string) {
   const response = await api.post<AuthenticatedUser>(
     "/users/me/avatar",
     formData,
-    { headers: { "Content-Type": "multipart/form-data" } },
+    {
+      adapter: "xhr",
+      headers: { "Content-Type": false },
+    },
   );
   return response.data;
 }

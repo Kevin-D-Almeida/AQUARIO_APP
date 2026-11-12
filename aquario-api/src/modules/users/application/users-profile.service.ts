@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { existsSync } from 'node:fs';
 import { unlink } from 'node:fs/promises';
 import { basename, join } from 'node:path';
@@ -37,6 +42,24 @@ export class UsersProfileService {
 
     await this.removeFile(previousFilename);
     return updatedUser;
+  }
+
+  async deleteAccount(userId: number, password: string) {
+    const user = await this.usersRepository.findById(userId);
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+
+    const passwordMatches = await bcrypt.compare(password, user.password);
+    if (!passwordMatches) {
+      throw new BadRequestException('Senha atual incorreta.');
+    }
+
+    const avatarFilename = user.avatarUrl
+      ? basename(user.avatarUrl)
+      : undefined;
+    await this.usersRepository.deleteAccount(userId);
+    await this.removeFile(avatarFilename).catch(() => undefined);
+
+    return { message: 'Conta excluída com sucesso.' };
   }
 
   getAvatarPath(filename: string) {

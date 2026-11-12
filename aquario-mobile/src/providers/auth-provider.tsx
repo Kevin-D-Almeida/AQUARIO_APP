@@ -79,10 +79,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const signUp = useCallback(
     async (data: RegisterRequest) => {
-      await register(data);
-      await signIn({ email: data.email, password: data.password });
+      const result = await register(data);
+      router.replace({
+        pathname: "/verify-email",
+        params: {
+          email: result.email,
+          emailSent: result.emailSent ? "true" : "false",
+        },
+      });
     },
-    [signIn],
+    [],
   );
 
   const value = useMemo<AuthContextValue>(

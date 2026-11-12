@@ -6,7 +6,10 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Modal,
   Pressable,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -19,8 +22,14 @@ import {
   resolveAvatarUrl,
   uploadProfileAvatar,
 } from "@/src/features/auth/services/profile-avatar.service";
+import { deleteAccount } from "@/src/features/auth/services/account.service";
 import { useAuth } from "@/src/providers/auth-provider";
-import { Card, PrimaryButton, ScreenHeader } from "@/src/shared/components/ui";
+import {
+  AppInput,
+  Card,
+  PrimaryButton,
+  ScreenHeader,
+} from "@/src/shared/components/ui";
 import { theme } from "@/src/shared/theme/theme";
 import { getErrorMessage } from "@/src/shared/utils/error-message";
 import { showSuccess } from "@/src/shared/utils/feedback";
@@ -28,6 +37,10 @@ import { showSuccess } from "@/src/shared/utils/feedback";
 export default function ProfileScreen() {
   const { user, signOut, updateUser } = useAuth();
   const [avatarBusy, setAvatarBusy] = useState(false);
+  const [deleteAccountVisible, setDeleteAccountVisible] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const avatarUrl = resolveAvatarUrl(user?.avatarUrl);
 
   async function selectAvatar() {
@@ -99,6 +112,24 @@ export default function ProfileScreen() {
       );
     } finally {
       setAvatarBusy(false);
+    }
+  }
+
+  async function submitAccountDeletion() {
+    if (!deletePassword || deleteBusy) return;
+
+    try {
+      setDeleteBusy(true);
+      setDeleteError(null);
+      await deleteAccount(deletePassword);
+      setDeleteAccountVisible(false);
+      await signOut();
+    } catch (error) {
+      setDeleteError(
+        getErrorMessage(error, "Não foi possível excluir sua conta."),
+      );
+    } finally {
+      setDeleteBusy(false);
     }
   }
 
@@ -184,6 +215,24 @@ export default function ProfileScreen() {
             </Text>
           </View>
         </Card>
+        <Card style={styles.deleteCard}>
+          <Text style={styles.deleteTitle}>Excluir conta</Text>
+          <Text style={styles.infoText}>
+            Sua conta, aquários, medições, equipamentos e lembretes serão
+            removidos permanentemente.
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setDeletePassword("");
+              setDeleteError(null);
+              setDeleteAccountVisible(true);
+            }}
+            style={styles.deleteAction}
+          >
+            <Text style={styles.deleteActionText}>Excluir minha conta</Text>
+          </Pressable>
+        </Card>
         <PrimaryButton
           title="Sair da conta"
           variant="danger"
@@ -199,6 +248,52 @@ export default function ProfileScreen() {
           }
         />
       </ScrollView>
+      <Modal
+        visible={deleteAccountVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteAccountVisible(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalBackdrop}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <View style={styles.deleteModal}>
+            <Text style={styles.deleteTitle}>Confirmar exclusão</Text>
+            <Text style={styles.infoText}>
+              Essa ação é permanente. Digite sua senha atual para continuar.
+            </Text>
+            <AppInput
+              label="Senha atual"
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+              secureTextEntry
+              autoComplete="current-password"
+            />
+            {deleteError ? (
+              <Text style={styles.deleteError}>{deleteError}</Text>
+            ) : null}
+            <View style={styles.modalActions}>
+              <Pressable
+                disabled={deleteBusy}
+                onPress={() => setDeleteAccountVisible(false)}
+                style={styles.cancelAction}
+              >
+                <Text style={styles.cancelText}>Cancelar</Text>
+              </Pressable>
+              <View style={styles.confirmAction}>
+                <PrimaryButton
+                  title="Excluir definitivamente"
+                  variant="danger"
+                  onPress={() => void submitAccountDeletion()}
+                  loading={deleteBusy}
+                  disabled={!deletePassword}
+                />
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -257,4 +352,29 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: 3,
   },
+  deleteCard: { gap: 10, borderColor: "#F2C9CE" },
+  deleteTitle: { color: theme.colors.danger, fontWeight: "900", fontSize: 16 },
+  deleteAction: { alignSelf: "flex-start", paddingVertical: 6 },
+  deleteActionText: { color: theme.colors.danger, fontWeight: "800" },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: "center",
+    backgroundColor: "rgba(10, 30, 32, 0.55)",
+    padding: 22,
+  },
+  deleteModal: {
+    gap: 16,
+    padding: 22,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.surface,
+  },
+  deleteError: { color: theme.colors.danger, lineHeight: 19 },
+  modalActions: { flexDirection: "row", alignItems: "center", gap: 12 },
+  cancelAction: {
+    minHeight: 50,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  cancelText: { color: theme.colors.muted, fontWeight: "800" },
+  confirmAction: { flex: 1 },
 });

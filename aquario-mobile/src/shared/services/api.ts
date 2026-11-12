@@ -34,7 +34,14 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (isAxiosError(error) && error.response?.status === 401) {
+    const requestUrl = error.config?.url ?? '';
+    const isAuthRequest = requestUrl.startsWith('/auth/');
+
+    if (
+      isAxiosError(error) &&
+      error.response?.status === 401 &&
+      !isAuthRequest
+    ) {
       await unauthorizedHandler?.();
     }
     return Promise.reject(error);

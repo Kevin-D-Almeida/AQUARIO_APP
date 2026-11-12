@@ -18,6 +18,12 @@ import {
 import { aquariumKeys } from "@/src/features/aquariums/queries/aquarium.queries";
 import { getAquarium } from "@/src/features/aquariums/services/aquariums.service";
 import {
+  FieldHint,
+  OnboardingStepGuide,
+} from "@/src/features/aquariums/components/onboarding-step-guide";
+import { useOnboardingNavigationGuard } from "@/src/features/aquariums/hooks/use-onboarding-navigation-guard";
+import { setAquariumOnboardingStep } from "@/src/features/aquariums/services/aquarium-onboarding.service";
+import {
   REMINDER_TYPES,
   type ReminderType,
 } from "@/src/features/reminders/model/reminder.types";
@@ -32,6 +38,7 @@ import {
   ScreenHeader,
 } from "@/src/shared/components/ui";
 import { theme } from "@/src/shared/theme/theme";
+import { useAuth } from "@/src/providers/auth-provider";
 import { getErrorMessage } from "@/src/shared/utils/error-message";
 import { showSuccess } from "@/src/shared/utils/feedback";
 
@@ -43,7 +50,11 @@ function getInitialDate() {
 }
 
 export default function ReminderScreen() {
-  const id = Number(useLocalSearchParams<{ id: string }>().id);
+  const params = useLocalSearchParams<{ id: string; onboarding?: string }>();
+  const id = Number(params.id);
+  const isOnboarding = params.onboarding === "true";
+  const { user } = useAuth();
+  const allowOnboardingNavigation = useOnboardingNavigationGuard(isOnboarding);
   const client = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -58,6 +69,17 @@ export default function ReminderScreen() {
   const [customDays, setCustomDays] = useState("");
   const [error, setError] = useState<string | null>(null);
   const isValidId = Number.isInteger(id) && id > 0;
+
+  async function continueToMeasurement() {
+    if (!user || !isValidId) return;
+    await setAquariumOnboardingStep(user.id, "measurement", id);
+    allowOnboardingNavigation();
+    router.replace({
+      pathname: "/aquariums/[id]/measurement",
+      params: { id, onboarding: "true" },
+    });
+  }
+
   const aquariumQuery = useQuery({
     queryKey: aquariumKeys.detail(id),
     queryFn: () => getAquarium(id),
@@ -67,10 +89,6 @@ export default function ReminderScreen() {
   const mutation = useMutation({
     mutationFn: createReminder,
     onSuccess: async () => {
-      await Promise.all([
-        client.invalidateQueries({ queryKey: reminderKeys.all }),
-        client.invalidateQueries({ queryKey: aquariumKeys.detail(id) }),
-      ]);
       setTitle("");
       setDescription("");
       setType("WATER_CHANGE");
@@ -82,7 +100,15 @@ export default function ReminderScreen() {
       setShowTimePicker(false);
       setError(null);
       showSuccess("Lembrete criado.");
-      router.back();
+      if (isOnboarding) {
+        await continueToMeasurement();
+      } else {
+        router.back();
+      }
+      void Promise.all([
+        client.invalidateQueries({ queryKey: reminderKeys.all }),
+        client.invalidateQueries({ queryKey: aquariumKeys.detail(id) }),
+      ]);
     },
     onError: (caught) =>
       setError(getErrorMessage(caught, "Não foi possível criar o lembrete.")),
@@ -145,6 +171,11 @@ export default function ReminderScreen() {
     });
   }
 
+  async function skipOnboardingStep() {
+    if (mutation.isPending) return;
+    await continueToMeasurement();
+  }
+
   if (!isValidId) {
     return (
       <EmptyState
@@ -163,6 +194,12 @@ export default function ReminderScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
+        {isOnboarding ? (
+          <OnboardingStepGuide
+            step="reminder"
+            onSkip={() => void skipOnboardingStep()}
+          />
+        ) : null}
         <ScreenHeader
           eyebrow="ROTINA"
           title="Novo lembrete"
@@ -175,6 +212,11 @@ export default function ReminderScreen() {
           onChangeText={setTitle}
           placeholder="Ex.: Trocar 30% da água"
         />
+        {isOnboarding ? (
+          <FieldHint>
+            Escreva a tarefa de forma direta para reconhecê-la na agenda.
+          </FieldHint>
+        ) : null}
 
         <View style={styles.field}>
           <Text style={styles.label}>Categoria</Text>
@@ -196,6 +238,11 @@ export default function ReminderScreen() {
               </Pressable>
             ))}
           </View>
+          {isOnboarding ? (
+            <FieldHint>
+              A categoria ajuda a organizar e identificar o tipo de cuidado.
+            </FieldHint>
+          ) : null}
         </View>
 
         <View style={styles.field}>
@@ -233,6 +280,11 @@ export default function ReminderScreen() {
               color={theme.colors.muted}
             />
           </Pressable>
+          {isOnboarding ? (
+            <FieldHint>
+              Escolha o dia em que pretende realizar esta tarefa.
+            </FieldHint>
+          ) : null}
 
           {showCalendar ? (
             <View style={styles.calendarContainer}>
@@ -281,6 +333,12 @@ export default function ReminderScreen() {
               <Text style={styles.dateHint}>Toque para alterar</Text>
             </View>
           </Pressable>
+          {isOnboarding ? (
+            <FieldHint>
+              Defina um horário para o aviso. Ele será usado pela notificação
+              local.
+            </FieldHint>
+          ) : null}
           {showTimePicker ? (
             <View style={styles.calendarContainer}>
               <DateTimePicker
@@ -332,17 +390,30 @@ export default function ReminderScreen() {
             ))}
           </View>
           {repeatMode === "custom" ? (
-            <AppInput
-              label="Repetir a cada quantos dias?"
-              value={customDays}
-              onChangeText={setCustomDays}
-              keyboardType="number-pad"
-              placeholder="Ex.: 3"
-            />
+            <View style={styles.field}>
+              <AppInput
+                label="Repetir a cada quantos dias?"
+                value={customDays}
+                onChangeText={setCustomDays}
+                keyboardType="number-pad"
+                placeholder="Ex.: 3"
+              />
+              {isOnboarding ? (
+                <FieldHint>
+                  Informe quantos dias devem separar uma ocorrência da próxima.
+                </FieldHint>
+              ) : null}
+            </View>
           ) : null}
           <Text style={styles.dateHint}>
             Ao concluir, a próxima ocorrência será criada automaticamente.
           </Text>
+          {isOnboarding ? (
+            <FieldHint>
+              Use repetição para tarefas regulares; deixe “Não repetir” para
+              uma atividade única.
+            </FieldHint>
+          ) : null}
         </View>
 
         <View style={styles.field}>
@@ -381,6 +452,11 @@ export default function ReminderScreen() {
               </Pressable>
             ))}
           </View>
+          {isOnboarding ? (
+            <FieldHint>
+              Opcional: vincule a tarefa ao equipamento que precisa de cuidado.
+            </FieldHint>
+          ) : null}
           {aquariumQuery.isError ? (
             <Text style={styles.error}>
               Não foi possível carregar os equipamentos. Você ainda pode criar
@@ -398,6 +474,11 @@ export default function ReminderScreen() {
           textAlignVertical="top"
           style={styles.description}
         />
+        {isOnboarding ? (
+          <FieldHint>
+            Opcional: inclua quantidade, instruções ou algum detalhe útil.
+          </FieldHint>
+        ) : null}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 

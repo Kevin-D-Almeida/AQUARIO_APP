@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Tabs, useGlobalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { theme } from "@/src/shared/theme/theme";
@@ -8,6 +8,7 @@ const TAB_BAR_CONTENT_HEIGHT = 58;
 
 export default function AppLayout() {
   const insets = useSafeAreaInsets();
+  const { onboarding } = useGlobalSearchParams<{ onboarding?: string }>();
 
   return (
     <Tabs
@@ -19,6 +20,7 @@ export default function AppLayout() {
         tabBarInactiveTintColor: theme.colors.muted,
         tabBarHideOnKeyboard: true,
         tabBarStyle: {
+          display: onboarding === "true" ? "none" : "flex",
           height: TAB_BAR_CONTENT_HEIGHT + insets.bottom,
           paddingTop: 7,
           paddingBottom: Math.max(insets.bottom, 8),
@@ -64,6 +66,10 @@ export default function AppLayout() {
             <Ionicons name="person-outline" color={color} size={size} />
           ),
         }}
+      />
+      <Tabs.Screen
+        name="onboarding"
+        options={{ href: null, headerShown: false }}
       />
       <Tabs.Screen
         name="aquariums/create"

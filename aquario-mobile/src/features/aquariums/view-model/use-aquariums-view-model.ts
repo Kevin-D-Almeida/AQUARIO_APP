@@ -8,6 +8,7 @@ export function useAquariumsViewModel() {
     aquariums: query.data ?? [],
     isLoading: query.isLoading,
     isError: query.isError,
+    isPaused: query.fetchStatus === "paused",
     error: query.error,
     refresh: query.refetch,
     isRefreshing: query.isRefetching,

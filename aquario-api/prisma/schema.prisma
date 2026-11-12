@@ -62,12 +62,26 @@ enum MeasurementSource {
   IOT
 }
 
+enum UserStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  BLOCKED
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
   password  String
   avatarUrl String?
+
+  status                         UserStatus @default(PENDING_VERIFICATION)
+  emailVerifiedAt                DateTime?
+  emailVerificationToken         String?
+  emailVerificationTokenExpiresAt DateTime?
+  passwordResetTokenHash         String?    @unique
+  passwordResetTokenExpiresAt    DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

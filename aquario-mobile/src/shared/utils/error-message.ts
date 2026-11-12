@@ -19,6 +19,9 @@ export function getErrorMessage(error: unknown, fallback: string) {
   }
 
   if (error.response.status === 401) {
+    const message = error.response.data?.message;
+    if (Array.isArray(message)) return message.join("\n");
+    if (typeof message === "string") return message;
     return "Sua sessão expirou. Entre novamente para continuar.";
   }
 

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
@@ -17,6 +18,7 @@ import { randomUUID } from 'node:crypto';
 import { createReadStream, mkdirSync } from 'node:fs';
 import { diskStorage } from 'multer';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { DeleteAccountDto } from './dto/delete-account.dto';
 import {
   AVATAR_DIRECTORY,
   UsersProfileService,
@@ -41,11 +43,11 @@ export class UserAvatarController {
 }
 
 @UseGuards(AuthGuard('jwt'))
-@Controller('users/me/avatar')
+@Controller('users/me')
 export class UsersController {
   constructor(private readonly usersProfileService: UsersProfileService) {}
 
-  @Post()
+  @Post('avatar')
   @UseInterceptors(
     FileInterceptor('avatar', {
       limits: { fileSize: 2 * 1024 * 1024, files: 1 },
@@ -79,8 +81,16 @@ export class UsersController {
     return this.usersProfileService.updateAvatar(userId, file.filename);
   }
 
-  @Delete()
+  @Delete('avatar')
   remove(@CurrentUser('id') userId: number) {
     return this.usersProfileService.removeAvatar(userId);
+  }
+
+  @Delete()
+  deleteAccount(
+    @CurrentUser('id') userId: number,
+    @Body() body: DeleteAccountDto,
+  ) {
+    return this.usersProfileService.deleteAccount(userId, body.password);
   }
 }

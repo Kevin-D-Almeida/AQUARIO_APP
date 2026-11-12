@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -17,7 +17,8 @@ import { getErrorMessage } from "@/src/shared/utils/error-message";
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState("");
+  const params = useLocalSearchParams<{ email?: string }>();
+  const [email, setEmail] = useState(params.email ?? "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -82,6 +83,9 @@ export default function LoginScreen() {
               secureTextEntry
               autoComplete="current-password"
             />
+            <Link href="/forgot-password" style={styles.forgotLink}>
+              Esqueci minha senha
+            </Link>
             {error ? <Text style={styles.error}>{error}</Text> : null}
             <PrimaryButton
               title="Entrar"
@@ -129,6 +133,11 @@ const styles = StyleSheet.create({
   title: { color: theme.colors.text, fontSize: 24, fontWeight: "800" },
   subtitle: { color: theme.colors.muted, marginTop: -10, marginBottom: 4 },
   error: { color: theme.colors.danger, lineHeight: 19 },
+  forgotLink: {
+    color: theme.colors.primaryDark,
+    fontWeight: "700",
+    alignSelf: "flex-end",
+  },
   footer: { color: theme.colors.muted, textAlign: "center" },
   link: { color: theme.colors.primary, fontWeight: "800" },
 });
